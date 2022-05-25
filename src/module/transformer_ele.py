@@ -209,6 +209,7 @@ class Decoder(nn.Module):
             dec_enc_attns.append(dec_enc_attn)
         return dec_outputs, dec_self_attns, dec_enc_attns
 
+
 class Transformer(nn.Module):
     def __init__(self, n_layers, embed_dim_src, embed_dim_tar, num_heads,
                  max_seq_len_src, max_seq_len_tar, dropout):
@@ -219,6 +220,7 @@ class Transformer(nn.Module):
         self.decoder = Decoder(n_layers, embed_dim_tar, embed_dim_src, num_heads, max_seq_len_tar, dropout=dropout)
 
         self.projection = nn.Linear(embed_dim_tar, embed_dim_tar)
+
     def forward(self, enc_inputs, dec_inputs): # , src_mask, trg_mask
 
         enc_outputs, enc_self_attns = self.encoder(enc_inputs) # , src_mask
@@ -228,22 +230,37 @@ class Transformer(nn.Module):
 
         return dec_outputs, enc_self_attns, dec_self_attns, dec_enc_attns
 
-if __name__ == '__main__':
-    # n_layers, embed_dim_src, embed_dim_tar, num_heads,
-    #                  max_seq_len_src, max_seq_len_tar, dropout
-    model = Transformer(n_layers=6, embed_dim_src=2000, embed_dim_tar=150, num_heads=4,
-                 max_seq_len_src=3, max_seq_len_tar=5, dropout=0.1).cuda()
-    data1 = torch.randn(size=[2, 3, 2000]).cuda()
-    data2 = torch.randn(size=[2, 5, 150]).cuda()
-    data3 = torch.randn(size=[2, 5, 150]).cuda()
-    out = model(data1, data2)
-    criterion = nn.L1Loss()
-    from torch import optim
-    optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.99)
-    for i in range(100):
-        out, enc_self_attns, dec_self_attns, dec_enc_attns = model(data1, data2)
-        loss = criterion(out, data3)
-        print(loss.item())
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+
+class Transformer_ele(nn.Module):
+    def __init__(self, n_layers, embed_dim_src, embed_dim_tar, num_heads,
+                 max_seq_len_src, max_seq_len_tar, dropout, positive_index):
+        self.model = Transformer(n_layers, embed_dim_src, embed_dim_tar, num_heads,
+                                 max_seq_len_src, max_seq_len_tar, dropout)
+        self.positive_index = positive_index  # [0, 3]
+        self.positive = nn.Sigmoid()
+
+    def forward(self, enc_inputs, dec_inputs):
+        dec_outputs, enc_self_attns, dec_self_attns, dec_enc_attns = self.model(enc_inputs, dec_inputs)
+        for index in self.positive_index:
+            dec_outputs[:, index] = self.positive(dec_outputs[:, index])
+        return dec_outputs, enc_self_attns, dec_self_attns, dec_enc_attns
+
+# if __name__ == '__main__':
+#     # n_layers, embed_dim_src, embed_dim_tar, num_heads,
+#     #                  max_seq_len_src, max_seq_len_tar, dropout
+#     model = Transformer(n_layers=6, embed_dim_src=2000, embed_dim_tar=150, num_heads=4,
+#                  max_seq_len_src=3, max_seq_len_tar=5, dropout=0.1).cuda()
+#     data1 = torch.randn(size=[2, 3, 2000]).cuda()
+#     data2 = torch.randn(size=[2, 5, 150]).cuda()
+#     data3 = torch.randn(size=[2, 5, 150]).cuda()
+#     out = model(data1, data2)
+#     criterion = nn.L1Loss()
+#     from torch import optim
+#     optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.99)
+#     for i in range(100):
+#         out, enc_self_attns, dec_self_attns, dec_enc_attns = model(data1, data2)
+#         loss = criterion(out, data3)
+#         print(loss.item())
+#         optimizer.zero_grad()
+#         loss.backward()
+#         optimizer.step()

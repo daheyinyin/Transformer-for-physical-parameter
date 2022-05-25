@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from src.module.transformer_ele import Transformer
+from src.module.transformer_ele import Transformer, Transformer_ele
 from src.data import ElectricalDataSet, DataLoader, load_txt
 import torch.nn as nn
 from torch import optim
@@ -12,6 +12,7 @@ embed_dim_src = 2000
 embed_dim_tar = 150
 max_seq_len_src = 3
 max_seq_len_tar = 4+1
+positive_index = [1-1, 3-1]
 dropout=0.1
 data_dict = dict(source_mean=[200.0, 166.675, 1086.1372078947368],source_std=[1,128.41554355980094, 2064.9014864208366],
                  target_mean=[56.605398270569715, 36.603037880718155, 156.93791664264134, -133.1116516062647],
@@ -22,15 +23,14 @@ ckpt = None
 # ckpt = r"/home/em/weiyangliao/transformer1/Interrupt_model.ckpt"
 
 dataset = ElectricalDataSet(root=r"./data",mode='train',
-                            max_seq_len_src = max_seq_len_src, max_seq_len_tar = max_seq_len_tar,
-                            embed_dim_src=embed_dim_src, embed_dim_tar = embed_dim_tar,
+                            max_seq_len_src=max_seq_len_src, max_seq_len_tar=max_seq_len_tar,
+                            embed_dim_src=embed_dim_src, embed_dim_tar=embed_dim_tar,
                             data_dict=data_dict)
 loader = DataLoader(dataset, batch_size, True)
 
 
-
-model = Transformer(n_layers, embed_dim_src, embed_dim_tar, num_heads,
-                 max_seq_len_src, max_seq_len_tar, dropout).cuda()
+model = Transformer_ele(n_layers, embed_dim_src, embed_dim_tar, num_heads,
+                 max_seq_len_src, max_seq_len_tar, dropout, positive_index).cuda()
 if ckpt is not None:
     model.load_state_dict(torch.load(ckpt)) # 设置路径就进行加载
 # criterion = nn.CrossEntropyLoss(ignore_index=0)
