@@ -101,7 +101,7 @@ class ElectricalDataSet(Dataset):
         elif self.mode == 'eval':
             return source_file, decoder_output
         elif self.mode == 'infer':
-            return source_file
+            return source_file, source_file_path
 
 if __name__ == '__main__':
     # from src.data.demo_data import sentences,make_data

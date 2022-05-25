@@ -1,3 +1,5 @@
+import numpy as np
+import os
 from src.module.transformer_ele import Transformer
 from src.data import ElectricalDataSet, DataLoader, load_txt
 import torch.nn as nn
@@ -25,11 +27,7 @@ dataset = ElectricalDataSet(root=r"./data",mode='train',
                             data_dict=data_dict)
 loader = DataLoader(dataset, batch_size, True)
 
-dataset = ElectricalDataSet(root=r"./data",mode='eval',
-                            max_seq_len_src = max_seq_len_src, max_seq_len_tar = max_seq_len_tar,
-                            embed_dim_src=embed_dim_src, embed_dim_tar = embed_dim_tar,
-                            data_dict=data_dict)
-loader_eval = DataLoader(dataset, batch_size, True)
+
 
 model = Transformer(n_layers, embed_dim_src, embed_dim_tar, num_heads,
                  max_seq_len_src, max_seq_len_tar, dropout).cuda()
@@ -51,9 +49,12 @@ def main():
     do_predict()
 
 
-def do_predict(enc_input):
+def do_predict():
     # read data
     path = r'./data/train/source/101.txt'
+    file_name = os.path.basename(path)
+    save_dir = r'./data/predict'
+    save_path = os.path.join(save_dir, file_name)
     input = load_txt(path=path, header=None, sep=',').transpose()
     print(input.shape)
 
@@ -70,22 +71,40 @@ def do_predict(enc_input):
     output = data_trans.target_inv_trans(output)
     output = output.numpy()
     print(output.shape)  # (4, 150)
-    plot_out(output[0])
-    plot_input_out(input[0], output[0])
+    # plot_out(output[0])
+    # plot_input_out(input[0], output[0])
+    numpy_txt(output.T, save_path)
 
 def do_batch_predict():
-    enc_inputs_loader = loader_eval
-    # data_trans
-    data_trans = dataset.data_trans
-    output_list = []
-    for enc_inputs in enc_inputs_loader:
+    # save_dir
+    save_dir = r'./data/predict'
+    # dataset
+    dataset = ElectricalDataSet(root=r"./data", mode='infer',
+                                max_seq_len_src=max_seq_len_src, max_seq_len_tar=max_seq_len_tar,
+                                embed_dim_src=embed_dim_src, embed_dim_tar=embed_dim_tar,
+                                data_dict=data_dict)
+    loader_eval = DataLoader(dataset, batch_size, True)
+    data_trans = dataset.data_trans # data_trans
+
+    for enc_inputs, source_file_path in loader_eval:
         enc_inputs = enc_inputs.cuda()
         dec_outputs = predict(enc_inputs).detach().cpu()
         dec_outputs = dec_outputs[:,: max_seq_len_tar - 1]
+
+        outputs = dec_outputs.numpy()
+        outputs = outputs[:, max_seq_len_tar - 1]
+
         # decoder_out trans
-        output = data_trans.target_inv_trans(dec_outputs)
-        output = output.numpy()
-        output_list.append(output)
+        outputs = data_trans.target_inv_trans(outputs)
+
+        # save
+        file_names = [os.path.basename(path) for path in source_file_path]
+        save_paths = [os.path.join(save_dir, name) for name in file_names]
+        [numpy_txt(output.T, save_path) for output, save_path in zip(outputs, save_paths)]
+
+
+def numpy_txt(array, name):
+    np.savetxt(array, name)
 
 
 def plot_out(data):
