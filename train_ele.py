@@ -27,8 +27,6 @@ dataset = ElectricalDataSet(root=r"./data",mode='train',
                             embed_dim_src=embed_dim_src, embed_dim_tar=embed_dim_tar,
                             data_dict=data_dict)
 loader = DataLoader(dataset, batch_size, True)
-
-
 model = Transformer_ele(n_layers, embed_dim_src, embed_dim_tar, num_heads,
                  max_seq_len_src, max_seq_len_tar, dropout, positive_index).cuda()
 if ckpt is not None:

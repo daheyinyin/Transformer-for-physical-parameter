@@ -230,19 +230,39 @@ class Transformer(nn.Module):
 
         return dec_outputs, enc_self_attns, dec_self_attns, dec_enc_attns
 
+class Positive_ele(nn.Module):
+    def __init__(self, positive_index, is_infer = False):
+        super(Positive_ele, self).__init__()
+        self.positive_index = sorted(positive_index)
+        self.is_infer = is_infer
+        self.positive = nn.Sigmoid()
+
+    def forward(self, dec_outputs):
+        data_len = dec_outputs.shape[1]
+        for index in self.positive_index:
+            if index < data_len:
+                dec_outputs[:, index] = self.positive(dec_outputs[:, index])
+        return dec_outputs
 
 class Transformer_ele(nn.Module):
     def __init__(self, n_layers, embed_dim_src, embed_dim_tar, num_heads,
                  max_seq_len_src, max_seq_len_tar, dropout, positive_index):
-        self.model = Transformer(n_layers, embed_dim_src, embed_dim_tar, num_heads,
-                                 max_seq_len_src, max_seq_len_tar, dropout)
+        super(Transformer_ele, self).__init__()
         self.positive_index = positive_index  # [0, 3]
-        self.positive = nn.Sigmoid()
+
+        self.encoder = Encoder(n_layers, embed_dim_src, num_heads, max_seq_len_src, dropout=dropout)
+        self.decoder = Decoder(n_layers, embed_dim_tar, embed_dim_src, num_heads, max_seq_len_tar, dropout=dropout)
+        # self.projection = nn.Linear(embed_dim_tar, embed_dim_tar)
+        # self.positive = Positive_ele(positive_index)
+        self.projection = nn.Sequential(nn.Linear(embed_dim_tar, embed_dim_tar),
+                                        Positive_ele(positive_index)
+                                        )
 
     def forward(self, enc_inputs, dec_inputs):
-        dec_outputs, enc_self_attns, dec_self_attns, dec_enc_attns = self.model(enc_inputs, dec_inputs)
-        for index in self.positive_index:
-            dec_outputs[:, index] = self.positive(dec_outputs[:, index])
+        enc_outputs, enc_self_attns = self.encoder(enc_inputs)  # , src_mask
+        dec_outputs, dec_self_attns, dec_enc_attns = self.decoder(dec_inputs, enc_outputs)  # , src_mask, trg_mask
+        dec_outputs = self.projection(dec_outputs)  # [batch_size, max_seq_len_tar, vocab_size_tar]
+
         return dec_outputs, enc_self_attns, dec_self_attns, dec_enc_attns
 
 # if __name__ == '__main__':
