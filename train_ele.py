@@ -6,21 +6,20 @@ import torch.nn as nn
 from torch import optim
 import torch
 import matplotlib.pyplot as plt
-n_layers = 6
-num_heads = 8
-embed_dim_src = 2000
-embed_dim_tar = 150
-max_seq_len_src = 3
-max_seq_len_tar = 4+1
-positive_index = []#[1-1, 3-1]
-dropout=0.1
-data_dict = dict(source_mean=[200.0, 166.675, 1086.1372078947368],source_std=[1,128.41554355980094, 2064.9014864208366],
-                 target_mean=[56.605398270569715, 36.603037880718155, 156.93791664264134, -133.1116516062647],
-                 target_std=[141.5582450571235, 13.412551904219523, 282.0334557891527, 7.86867042633041])
-batch_size = 32
-ckpt = None
-# ckpt = r"/home/em/weiyangliao/transformer1/model.ckpt"
-# ckpt = r"/home/em/weiyangliao/transformer1/Interrupt_model.ckpt"
+
+from config import config
+n_layers = config.n_layers
+num_heads = config.num_heads
+embed_dim_src = config.embed_dim_src
+embed_dim_tar = config.embed_dim_tar
+max_seq_len_src = config.max_seq_len_src
+max_seq_len_tar = config.max_seq_len_tar
+positive_index = config.positive_index
+dropout=config.dropout
+data_dict = config.data_dict
+batch_size = config.batch_size
+ckpt = config.ckpt
+
 
 dataset = ElectricalDataSet(root=r"./data",mode='train',
                             max_seq_len_src=max_seq_len_src, max_seq_len_tar=max_seq_len_tar,
@@ -64,7 +63,6 @@ def do_predict():
     # predict
     # print(enc_input.shape)
     output = predict(enc_input).detach().cpu().squeeze()
-    output = output[:max_seq_len_tar - 1]
     # decoder_out trans
     output = data_trans.target_inv_trans(output)
     output = output.numpy()
@@ -163,7 +161,7 @@ def predict(enc_input):
         dec_input = torch.cat([dec_input, next_data],dim=1) # ,dtype=enc_input.dtype, 1
         # if i < max_seq_len_tar:
         #     dec_input = torch.cat([dec_input, torch.zeros(size=(enc_input.shape[0], max_seq_len_tar-i , embed_dim_tar)).type_as(enc_input.data)],dim=1)
-    return dec_input
+    return dec_input[:,1:]
 
 
 if __name__ == '__main__':
