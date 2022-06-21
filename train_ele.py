@@ -19,6 +19,8 @@ dropout=config.dropout
 data_dict = config.data_dict
 batch_size = config.batch_size
 ckpt = config.ckpt
+device = config.device
+device = torch.device("cuda:{}".format(config.device)) if config.device in [0,1,2,3,4,5,6,7] else torch.device('cpu')
 
 
 dataset = ElectricalDataSet(root=r"./data",mode='train',
@@ -27,9 +29,9 @@ dataset = ElectricalDataSet(root=r"./data",mode='train',
                             data_dict=data_dict)
 loader = DataLoader(dataset, batch_size, True)
 model = Transformer_ele(n_layers, embed_dim_src, embed_dim_tar, num_heads,
-                 max_seq_len_src, max_seq_len_tar, dropout, positive_index).cuda()
+                 max_seq_len_src, max_seq_len_tar, dropout, positive_index).to(device)
 if ckpt is not None:
-    model.load_state_dict(torch.load(ckpt)) # 设置路径就进行加载
+    model.load_state_dict(torch.load(ckpt,map_location=device)) # 设置路径就进行加载
 # criterion = nn.CrossEntropyLoss(ignore_index=0)
 # criterion = nn.MSELoss()
 criterion = nn.L1Loss()
@@ -59,7 +61,7 @@ def do_predict():
     data_trans = dataset.data_trans
     enc_input = data_trans.source_trans(input)
     enc_input = torch.from_numpy(enc_input)
-    enc_input = enc_input.unsqueeze(dim=0).cuda()
+    enc_input = enc_input.unsqueeze(dim=0).to(device)
     # predict
     # print(enc_input.shape)
     output = predict(enc_input).detach().cpu().squeeze()

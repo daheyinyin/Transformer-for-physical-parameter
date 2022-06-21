@@ -13,5 +13,6 @@ config = Dict(n_layers = 6,
                  target_std=[141.5582450571235, 13.412551904219523, 282.0334557891527, 7.86867042633041]),
               batch_size = 32,
               ckpt = None,
+              device = 'CPU'
 )
 
