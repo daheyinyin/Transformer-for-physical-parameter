@@ -133,6 +133,7 @@ def train():
 
             enc_inputs, dec_inputs, dec_outputs = enc_inputs.to(device), dec_inputs.to(device), dec_outputs.to(device)
             # print(enc_inputs.shape, dec_inputs.shape, dec_outputs.shape) # [32, 3, 2000] ,[32, 5, 150]
+
             # outputs: [batch_size * tgt_len, tgt_vocab_size]
             outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(enc_inputs, dec_inputs)
             # print(outputs.shape, dec_outputs.shape) # [32, 5, 150]
