@@ -85,7 +85,7 @@ def do_batch_predict():
     data_trans = dataset.data_trans # data_trans
 
     for enc_inputs, source_file_path in loader_eval:
-        enc_inputs = enc_inputs.cuda()
+        enc_inputs = enc_inputs.to(device)
         dec_outputs = predict(enc_inputs).detach().cpu()
         dec_outputs = dec_outputs[:,: max_seq_len_tar - 1]
 
@@ -131,7 +131,7 @@ def train():
             # import sys
             # sys.exit(0)
 
-            enc_inputs, dec_inputs, dec_outputs = enc_inputs.cuda(), dec_inputs.cuda(), dec_outputs.cuda()
+            enc_inputs, dec_inputs, dec_outputs = enc_inputs.to(device), dec_inputs.to(device), dec_outputs.to(device)
             # print(enc_inputs.shape, dec_inputs.shape, dec_outputs.shape) # [32, 3, 2000]
             # outputs: [batch_size * tgt_len, tgt_vocab_size]
             outputs, enc_self_attns, dec_self_attns, dec_enc_attns = model(enc_inputs, dec_inputs)

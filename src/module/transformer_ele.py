@@ -198,8 +198,9 @@ class Decoder(nn.Module):
         '''
 
         dec_outputs = self.pos_emb(dec_inputs.transpose(0, 1)).transpose(0, 1)  # [batch_size, tgt_len, d_model]
-        dec_self_attn_subsequence_mask = get_attn_subsequence_mask(dec_inputs).cuda()
-        dec_self_attn_mask = torch.gt(dec_self_attn_subsequence_mask,0).cuda()
+        device = dec_outputs.device
+        dec_self_attn_subsequence_mask = get_attn_subsequence_mask(dec_inputs).to(device)
+        dec_self_attn_mask = torch.gt(dec_self_attn_subsequence_mask,0).to(device)
 
         dec_self_attns, dec_enc_attns = [], []
         for layer in self.layers:
@@ -265,22 +266,24 @@ class Transformer_ele(nn.Module):
 
         return dec_outputs, enc_self_attns, dec_self_attns, dec_enc_attns
 
-# if __name__ == '__main__':
-#     # n_layers, embed_dim_src, embed_dim_tar, num_heads,
-#     #                  max_seq_len_src, max_seq_len_tar, dropout
-#     model = Transformer(n_layers=6, embed_dim_src=2000, embed_dim_tar=150, num_heads=4,
-#                  max_seq_len_src=3, max_seq_len_tar=5, dropout=0.1).cuda()
-#     data1 = torch.randn(size=[2, 3, 2000]).cuda()
-#     data2 = torch.randn(size=[2, 5, 150]).cuda()
-#     data3 = torch.randn(size=[2, 5, 150]).cuda()
-#     out = model(data1, data2)
-#     criterion = nn.L1Loss()
-#     from torch import optim
-#     optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.99)
-#     for i in range(100):
-#         out, enc_self_attns, dec_self_attns, dec_enc_attns = model(data1, data2)
-#         loss = criterion(out, data3)
-#         print(loss.item())
-#         optimizer.zero_grad()
-#         loss.backward()
-#         optimizer.step()
+if __name__ == '__main__':
+    # n_layers, embed_dim_src, embed_dim_tar, num_heads,
+    #                  max_seq_len_src, max_seq_len_tar, dropout
+    model = Transformer(n_layers=6, embed_dim_src=2000, embed_dim_tar=150, num_heads=4,
+                 max_seq_len_src=3, max_seq_len_tar=5, dropout=0.1)
+    data1 = torch.randn(size=[2, 3, 2000])
+    data2 = torch.randn(size=[2, 5, 150])
+    data3 = torch.randn(size=[2, 5, 150])
+    # model = model.cuda()
+    # data1,data2,data3 = data1.cuda(),data2.cuda(),data3.cuda()
+    out = model(data1, data2)
+    criterion = nn.L1Loss()
+    from torch import optim
+    optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.99)
+    for i in range(10):
+        out, enc_self_attns, dec_self_attns, dec_enc_attns = model(data1, data2)
+        loss = criterion(out, data3)
+        print(loss.item())
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
