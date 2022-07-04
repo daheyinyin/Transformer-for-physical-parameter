@@ -72,6 +72,19 @@ class ElectricalDataSet(Dataset):
         self.data_dict = data_dict
         self.data_trans = Data_transformer(self.data_dict)
 
+    def get_means(self):
+        assert self.mode == 'train', 'only calculate in train stage'
+        for i in self.__len__():
+            source_file, _, decoder_output = self.__getitem__(i)
+            mean = [ ]
+        # source_file, decoder_input, decoder_output
+
+    def get_mean(self, x):
+        return x.mean , x.size
+
+    def get_var(self):
+        ...
+
     def __len__(self):
         return self.file_num
 
@@ -119,7 +132,6 @@ if __name__ == '__main__':
                                 data_dict = dict(source_mean=[200, 162.5, 110.0125], source_std=[1, 96.01432, 100.73362],
                      target_mean=[77.022865, 45.173065, 103.761536, -134.91313],
                      target_std=[26.337313, 8.723892, 28.81657, 2.0859916])
-
                                 )
 
     print(len(dataset[0]), dataset[0][0].shape, type(dataset[0][0] ))
